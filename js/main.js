@@ -1,77 +1,4 @@
-const products = [
-  {
-    id: 1,
-    name: "YAMAHA белая",
-    category: "small",
-    size: "190×145",
-    price: 600,
-    image: "images/small-yamaha-white.jpg"
-  },
-  {
-    id: 2,
-    name: "YAMAHA красная",
-    category: "small",
-    size: "190×145",
-    price: 600,
-    image: "images/small-yamaha-red.jpg"
-  },
-  {
-    id: 3,
-    name: "СССР",
-    category: "small",
-    size: "190×145",
-    price: 600,
-    image: "images/small-ussr.jpg"
-  },
-  {
-    id: 4,
-    name: "СССР красная",
-    category: "large",
-    size: "245×185",
-    price: 600,
-    image: "images/large-ussr.jpg"
-  },
-  {
-    id: 5,
-    name: "Россия белая",
-    category: "large",
-    size: "245×185",
-    price: 600,
-    image: "images/large-russia.jpg"
-  },
-  {
-    id: 6,
-    name: "Сраный мотоциклист",
-    category: "large",
-    size: "245×185",
-    price: 600,
-    image: "images/large-rider.jpg"
-  },
-  {
-    id: 7,
-    name: "Подшлемник непродуваемый",
-    category: "accessories",
-    subtitle: "Защита от ветра",
-    price: 700,
-    image: "images/accessory-balaclava-wind.jpg"
-  },
-  {
-    id: 8,
-    name: "Подшлемник летний MOTONANNY",
-    category: "accessories",
-    subtitle: "Собственное производство, чёрный",
-    price: 1500,
-    image: "images/accessory-balaclava-black.jpg"
-  },
-  {
-    id: 9,
-    name: "Подшлемник летний MOTONANNY",
-    category: "accessories",
-    subtitle: "Собственное производство, серый",
-    price: 1500,
-    image: "images/accessory-balaclava-grey.jpg"
-  }
-];
+const products = window.MOTONOMER_CATALOG || [];
 
 window.MOTONOMER_CONFIG = {
   telegram: "https://t.me/motonomer",
@@ -84,6 +11,16 @@ window.formatPrice = (value) =>
   new Intl.NumberFormat("ru-RU").format(value) + " ₽";
 
 const formatPrice = window.formatPrice;
+const PRODUCT_CART_KEY = "motonomer-cart";
+
+function getProductQuantity(productId) {
+  try {
+    const cart = JSON.parse(localStorage.getItem(PRODUCT_CART_KEY)) || [];
+    return cart.find((item) => item.id === productId)?.quantity || 0;
+  } catch {
+    return 0;
+  }
+}
 
 function getProductMeta(product) {
   if (product.category === "small") {
@@ -95,6 +32,9 @@ function getProductMeta(product) {
   if (product.category === "accessories") {
     return { badge: "ACCESSORY", label: "Аксессуар", detail: product.subtitle || "" };
   }
+  if (product.category === "plates") {
+    return { badge: `${product.size} MM`, label: "Изготовление номера", detail: product.subtitle || `${product.size} мм` };
+  }
   return { badge: "", label: "", detail: "" };
 }
 
@@ -102,8 +42,9 @@ window.getProductMeta = getProductMeta;
 
 function productCard(product) {
   const meta = getProductMeta(product);
+  const quantity = getProductQuantity(product.id);
   return `
-    <article class="product-card reveal">
+    <article class="product-card">
       <span class="product-badge">${meta.badge}</span>
       <div class="product-image">
         <img src="${product.image}" alt="${product.name}" width="900" height="900" loading="lazy">
@@ -114,7 +55,13 @@ function productCard(product) {
         ${meta.detail ? `<p class="product-detail">${meta.detail}</p>` : ""}
         <div class="product-buy">
           <span class="product-price">${formatPrice(product.price)}</span>
-          <button class="add-to-cart" type="button" data-add-to-cart="${product.id}" aria-label="Добавить ${product.name} в корзину">+</button>
+          ${quantity > 0 ? `
+            <div class="product-quantity" aria-label="Количество товара ${product.name}">
+              <button class="product-quantity-button" type="button" data-product-quantity="decrease" data-id="${product.id}" aria-label="Уменьшить количество ${product.name}">−</button>
+              <span class="product-quantity-value">${quantity}</span>
+              <button class="product-quantity-button product-quantity-button-accent" type="button" data-product-quantity="increase" data-id="${product.id}" aria-label="Увеличить количество ${product.name}">+</button>
+            </div>
+          ` : `<button class="add-to-cart" type="button" data-add-to-cart="${product.id}" aria-label="Добавить ${product.name} в корзину">+</button>`}
         </div>
       </div>
     </article>`;
@@ -126,7 +73,7 @@ function renderProducts() {
     let list = products;
 
     if (type === "featured") {
-      list = products.filter((product) => product.category !== "accessories").slice(0, 6);
+      list = products.filter((product) => product.category === "small" || product.category === "large").slice(0, 6);
     } else {
       list = products.filter((product) => product.category === type);
     }
@@ -134,6 +81,8 @@ function renderProducts() {
     grid.innerHTML = list.map(productCard).join("");
   });
 }
+
+window.renderProductGrids = renderProducts;
 
 function setupMenu() {
   const button = document.querySelector(".menu-toggle");
@@ -143,14 +92,21 @@ function setupMenu() {
   const closeMenu = () => {
     document.body.classList.remove("menu-open");
     button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-label", "Открыть меню");
   };
 
   button.addEventListener("click", () => {
     const isOpen = document.body.classList.toggle("menu-open");
     button.setAttribute("aria-expanded", String(isOpen));
+    button.setAttribute("aria-label", isOpen ? "Закрыть меню" : "Открыть меню");
   });
 
   nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !document.body.classList.contains("menu-open")) return;
+    closeMenu();
+    button.focus();
+  });
   window.addEventListener("resize", () => {
     if (window.innerWidth > 760) closeMenu();
   });
@@ -165,7 +121,16 @@ function setupHeader() {
 }
 
 function setupAccordion() {
-  document.querySelectorAll(".accordion-button").forEach((button) => {
+  document.querySelectorAll(".accordion-button").forEach((button, index) => {
+    const content = button.nextElementSibling;
+    const contentId = `faq-answer-${index + 1}`;
+    if (content) {
+      content.id = contentId;
+      content.setAttribute("role", "region");
+      content.setAttribute("aria-labelledby", `faq-question-${index + 1}`);
+    }
+    button.id = `faq-question-${index + 1}`;
+    button.setAttribute("aria-controls", contentId);
     button.addEventListener("click", () => {
       const item = button.closest(".accordion-item");
       const isOpen = item.classList.toggle("open");

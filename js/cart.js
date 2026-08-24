@@ -18,6 +18,28 @@ function getCart() {
 function saveCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
   updateCartCount();
+  if (window.renderProductGrids) window.renderProductGrids();
+}
+
+function getFloatingCart() {
+  if (document.body?.dataset.page === "cart") return null;
+
+  let link = document.querySelector(".floating-cart");
+  if (link) return link;
+
+  link = document.createElement("a");
+  link.className = "floating-cart is-empty";
+  link.href = "cart.html";
+  link.setAttribute("aria-label", "Открыть корзину");
+  link.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 7H6"/>
+      <circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>
+    </svg>
+    <span class="floating-cart-label">Корзина</span>
+    <span class="floating-cart-count" data-floating-cart-count>0</span>`;
+  document.body.append(link);
+  return link;
 }
 
 function updateCartCount() {
@@ -25,6 +47,12 @@ function updateCartCount() {
   document.querySelectorAll("[data-cart-count]").forEach((element) => {
     element.textContent = count;
   });
+
+  const floatingCart = getFloatingCart();
+  if (!floatingCart) return;
+  floatingCart.classList.toggle("is-empty", count === 0);
+  floatingCart.querySelector("[data-floating-cart-count]").textContent = count;
+  floatingCart.setAttribute("aria-label", `Открыть корзину, товаров: ${count}`);
 }
 
 function showToast(message = "Товар добавлен в корзину") {
@@ -52,6 +80,11 @@ function addToCart(productId) {
   else cart.push({ id: productId, quantity: 1 });
   saveCart(cart);
   showToast();
+  const floatingCart = getFloatingCart();
+  if (floatingCart) {
+    floatingCart.classList.remove("bump");
+    requestAnimationFrame(() => floatingCart.classList.add("bump"));
+  }
 }
 
 function changeQuantity(productId, change) {
@@ -124,7 +157,7 @@ function renderCartPage() {
         <h2>Ваш заказ</h2>
         <div class="summary-line"><span>Товары</span><strong>${quantity}</strong></div>
         <div class="summary-line summary-total"><span>Итого</span><strong>${window.formatPrice(total)}</strong></div>
-        <button class="button button-accent" type="button" data-checkout-open>Оформить заказ <span>↗</span></button>
+        <button class="button button-accent" type="button" data-checkout-open>Оформить заказ <svg class="icon-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg></button>
         <p class="order-note">Заявка будет отправлена в Telegram.</p>
       </aside>
     </div>`;
@@ -262,6 +295,16 @@ function submitCheckout(form) {
 document.addEventListener("click", (event) => {
   const addButton = event.target.closest("[data-add-to-cart]");
   if (addButton) addToCart(Number(addButton.dataset.addToCart));
+
+  const productQuantityButton = event.target.closest("[data-product-quantity]");
+  if (productQuantityButton) {
+    const id = Number(productQuantityButton.dataset.id);
+    const change = productQuantityButton.dataset.productQuantity === "increase" ? 1 : -1;
+    const hasItem = getCart().some((item) => item.id === id);
+    if (change > 0 && !hasItem) addToCart(id);
+    else changeQuantity(id, change);
+    return;
+  }
 
   const checkoutOpen = event.target.closest("[data-checkout-open]");
   if (checkoutOpen) {
