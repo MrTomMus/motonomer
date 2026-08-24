@@ -2,7 +2,8 @@ const products = window.MOTONOMER_CATALOG || [];
 
 window.MOTONOMER_CONFIG = {
   telegram: "https://t.me/motonomer",
-  vk: "https://vk.ru/motonomerr"
+  vk: "https://vk.ru/motonomerr",
+  whatsapp: "https://wa.me/79933536940"
 };
 
 window.MOTONOMER_PRODUCTS = products;
@@ -170,6 +171,7 @@ function setupSocialLinks() {
   const config = window.MOTONOMER_CONFIG || {};
   setupExternalLinks("[data-telegram]", config.telegram || "https://t.me/motonomer");
   setupExternalLinks("[data-vk]", config.vk || "https://vk.ru/motonomerr");
+  setupExternalLinks("[data-whatsapp]", config.whatsapp || "https://wa.me/79933536940");
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -276,7 +276,67 @@ h3 { font-size: 24px; }
 .plates-section .product-grid,
 .plates-grid {
   grid-template-columns: repeat(2, minmax(0, 420px));
+  margin-top: 40px;
 }
+.plates-info {
+  max-width: 760px;
+  margin: 8px 0 28px;
+}
+.plates-actions { margin-bottom: 8px; }
+.info-copy p {
+  margin: 0 0 28px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.info-list {
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+.info-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+.info-list strong { color: var(--text); font-weight: 800; white-space: nowrap; }
+.plates-page-note { max-width: 760px; margin-bottom: 40px; }
+.custom-copy .button-row { margin-top: 0; }
+.custom-copy strong { color: var(--text); }
+.service-section { border-top: 1px solid var(--border); }
+.service-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+}
+.service-text {
+  max-width: 420px;
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.price-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+.price-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+}
+.price-list strong { color: var(--accent); font-weight: 800; white-space: nowrap; }
 .custom-panel {
   display: grid; min-height: 630px; overflow: hidden; background: var(--surface);
   grid-template-columns: .9fr 1.1fr;
@@ -723,6 +783,9 @@ body.checkout-open { overflow: hidden; }
   .product-grid { grid-template-columns: 1fr; }
   .plates-section .product-grid,
   .plates-grid { grid-template-columns: 1fr; }
+  .service-grid { grid-template-columns: 1fr; gap: 36px; }
+  .info-list li,
+  .price-list li { font-size: 13px; gap: 12px; }
   .product-quantity-button {
     flex-basis: 38px;
     width: 38px;
